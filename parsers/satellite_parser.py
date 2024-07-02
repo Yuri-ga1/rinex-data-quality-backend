@@ -61,7 +61,7 @@ class SatelliteParser:
     def get_satellite(self):
         return self.satellite
     
-    def __hours_to_time(self, hour):
+    def __hours_to_seconds(self, hour):
         return int(round(hour*3600))
     
     def __clean_and_reorder_columns(self):
@@ -89,7 +89,7 @@ class SatelliteParser:
 
         self.data = self.data.T
         if len(self.data) > 4:
-            self.data[1] = np.vectorize(self.__hours_to_time)(self.data[1])
+            self.data[1] = np.vectorize(self.__hours_to_seconds)(self.data[1])
             self.data = self.data.T
         else:
             self.data = None
