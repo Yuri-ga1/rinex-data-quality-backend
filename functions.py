@@ -69,13 +69,12 @@ def find_holes(file: SatelliteParser, data_period: int, timestep: int):
         signals = signals[:-unworking_signals_count]
     
     records = 0
-    is_want_data=True
+    was_data=False
     is_send_period_started = False
     prev_tsn = 0
 
     def check_for_hole():
-        nonlocal datas, holes, records, curr_tsn, prev_tsn, is_send_period_started, is_want_data
-        
+        nonlocal datas, holes, records, curr_tsn, prev_tsn, is_send_period_started, was_data
         
         
         if np.all(datas == 0) and not is_send_period_started:
@@ -90,12 +89,10 @@ def find_holes(file: SatelliteParser, data_period: int, timestep: int):
                 records += int(curr_tsn) - int(prev_tsn)-1
             prev_tsn = curr_tsn
             for signal in signals:
-                holes["actual"][signal][-1] += 1
-                
-        # if np.any(datas>0) and is_want_data and is_send_period_started:
-            # is_want_data = False
-            # for signal in signals:
-                    # holes["actual"][signal] +=1        
+                holes["actual"][signal][-1] += 1 
+                           
+        if np.any(datas>0) and not was_data:
+            was_data = True       
 
         if np.any(datas > 0) and prev_tsn + 1 < curr_tsn:
             for signal in signals:
@@ -125,6 +122,8 @@ def find_holes(file: SatelliteParser, data_period: int, timestep: int):
         
         if np.all(datas > 0):
             for signal in signals:
+                if np.all(holes["potencial"][signal] == 0):
+                    continue
                 holes['actual'][signal]+=holes["potencial"][signal]
                 holes["potencial"][signal] = np.zeros_like(holes["potencial"][signal])
             prev_tsn = curr_tsn
@@ -132,6 +131,9 @@ def find_holes(file: SatelliteParser, data_period: int, timestep: int):
 
         if np.all(datas == 0) and elev < ELEVATION:
             for signal in signals:
+                if not was_data:
+                    holes['actual'][signal][-1]=-1
+                
                 holes["potencial"][signal] = np.zeros_like(holes["potencial"][signal])
             
             is_send_period_started = False
@@ -153,9 +155,10 @@ def find_holes(file: SatelliteParser, data_period: int, timestep: int):
                 for signal in signals:
                     holes["actual"][signal] = np.append(holes["actual"][signal], end_number)
                     holes["potencial"][signal] = np.append(holes["potencial"][signal], 0)
-            is_want_data=True
+            was_data=False
             records = records%period_records
-            
+    
+                    
     for signal in signals:        
         holes["actual"][signal] += holes["potencial"][signal]           
                 

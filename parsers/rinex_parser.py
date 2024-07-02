@@ -1,7 +1,7 @@
 from fastapi import UploadFile
 from datetime import date
 
-from ..config import FILE_BASE_PATH
+from config import FILE_BASE_PATH
 
 import re
 import zipfile
@@ -96,6 +96,8 @@ class RinexParser:
         file.file.seek(0)
         file_path = os.path.join(self.save_path, file.filename)
         content = await file.read()
+        
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
             
         with open(file_path, "wb") as f:
             f.write(content)
