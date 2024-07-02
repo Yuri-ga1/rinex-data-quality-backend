@@ -178,16 +178,20 @@ async def get_satellite_data(
     
     signals = _satellite.get_signals()
     data = _satellite.get_data()
+    timestep = parser.get_timestep()
+    
     tsn = data[:, 0]
     time = data[:, 1]
-    signasl_data = data[:, 4:].T
+    elevation = data[:, 2]
+    signals_data = data[:, 4:].T
     
     result={
         'tsn': tsn,
         'seconds': time,
+        'elevation': elevation,
         'signals': signals,
-        'data': signasl_data,
-        'timestep': parser.get_timestep()
+        'data': signals_data,
+        'timestep': timestep
     }
     
     return JSONResponse(content=convert_numpy_to_list(result))
