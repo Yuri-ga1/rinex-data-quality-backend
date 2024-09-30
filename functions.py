@@ -1,4 +1,6 @@
 from parsers.satellite_parser import SatelliteParser
+from parsers.rinex_parser import RinexParser
+
 from config import *
 
 import zipfile
@@ -9,6 +11,7 @@ import requests
 import os
 import shutil
 import gzip
+import json
 
             
 def upload_nav_file(year: int, yday: str, nav_filename: str, cookies: dict):
@@ -228,3 +231,61 @@ def get_graph_data(signals: dict):
             })
         graph_data.append(s)
     return graph_data
+
+def download_sattelite_files(parser: RinexParser, task_id: str):
+    try:
+        save_path = os.path.join(f'{FILE_BASE_PATH}result_csv', 'res.zip')
+
+        if os.path.exists(save_path):
+            redis_client.set(task_id, json.dumps({'status': 'completed', 'result': save_path}))
+            return
+        
+        redis_client.set(task_id, json.dumps({'status': 'processing'}))
+
+        date = parser.get_date()
+        year = date.year
+        yday = str(date.timetuple().tm_yday).zfill(3)
+
+        nav_filename = f'BRDC00IGS_R_{year}{yday}0000_01D_MN.rnx.gz'
+        rinex_to_csv_processing_id = f"{parser.get_filename()}-_-{nav_filename}"
+        cookies = {"rinex_to_csv_processing_id": rinex_to_csv_processing_id}
+
+        print('upload_nav')
+        # отправка на сервер файла навигации
+        upload_nav_file(
+            year=year,
+            yday=yday,
+            nav_filename=nav_filename,
+            cookies=cookies
+        )
+        print('upload_rinex')
+        # отправка на сервер файла с данными
+        rinex_path = parser.get_filepath()
+        send_file(
+            path=rinex_path,
+            cookies=cookies,
+            url=UPLOAD_RINEX_URL
+        )
+
+        systems = parser.get_systems()
+        timestep = parser.get_timestep()
+        systems['timestep'] = int(timestep)      
+
+        print('post signals')
+        # отправка сигналов
+        response = requests.post(RUN_URL, json=systems, cookies=cookies)
+        print("get signals")
+        # Получение сигналов
+        response = requests.get(RESULT_URL, cookies=cookies)
+        os.makedirs(f'{FILE_BASE_PATH}result_csv', exist_ok=True)
+        
+        if response.status_code == 200:
+            with open(save_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        else:
+            response.raise_for_status()
+
+        redis_client.set(task_id, json.dumps({'status': 'completed', 'result': save_path}))
+    except Exception as e:
+        redis_client.set(task_id, json.dumps({'status': 'failed', 'error': str(e)}))
