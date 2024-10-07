@@ -43,6 +43,7 @@ async def upload_data(
     
     task_id = str(uuid.uuid4())
     
+    logger.info(f'Create background task with id: {task_id}')
     redis_client.set(task_id, json.dumps({'status': 'pending'}))
     background_tasks.add_task(download_sattelite_files, parser, task_id)
     
@@ -61,30 +62,32 @@ async def find_holes_in_data(
     data_period: int = Form(15),
     manager: ParserManager = Depends(get_parser_manager)
 ):
-    print(data_period, task_id)
+    logger.debug(f"Params in find_holes_in_data data_period = {data_period}, task_id = {task_id}")
     task_info = json.loads(redis_client.get(task_id) or '{}')
-    print(task_info['status'])
+    
     if not task_info:
+        logger.error(f'Something went wrong with background task. Task id: {task_id}')
         raise HTTPException(status_code=404, detail="Files not found.")
     
     while task_info['status'] == 'processing':
+        logger.info(f'User waiting for files. Task id: {task_id}')
         await asyncio.sleep(1)
         task_info = json.loads(redis_client.get(task_id) or '{}')
     
     if task_info['status'] == 'failed':
+        logger.warning(f"Task processing failed. Task id: {task_id}")
         raise HTTPException(status_code=500, detail="Task processing failed.")
     
     if task_info['status'] == 'completed':
+        logger.info(f"Task processing completed. Task id: {task_id}")
         save_path = task_info['result']
-    print(save_path)
+    
     
     parser = manager.get_parser()
-    print('parser')
     
     date = parser.get_date()
     year = date.year
     yday = str(date.timetuple().tm_yday).zfill(3)
-    print('yday')
     
     timestep = parser.get_timestep()
     
@@ -92,15 +95,15 @@ async def find_holes_in_data(
     result=[]
     files = unzip_zip(save_path, extract_to_folder=extract_to_folder)
     
-    print("create json")
+    logger.debug(f"Creating a response with holes in {parser.filename}")
     for file in files:
         satellite = await SatelliteParser.create(file)
         holes = find_holes(satellite, data_period, timestep)
         
         transformed_data=[]
         for key, value in holes.items():
-            new_dict = {"x": key, "y": value}
-            transformed_data.append(new_dict)
+            signal_holes_dict = {"x": key, "y": value}
+            transformed_data.append(signal_holes_dict)
                     
         data={}
         data['id'] = satellite.get_satellite()
@@ -124,6 +127,7 @@ async def get_satellite_data(
     radar = parser.get_radar_name().lower()
     filename = f'{radar}_{satellite}_{yday}_{year%100}.dat'
     filepath = f'{FILE_BASE_PATH}satellite\\{year}\\{yday}\\{filename}'
+    logger.debug(f"Getting data for satellite: {satellite}")
 
     _satellite = await SatelliteParser.create(filepath)
     
@@ -132,6 +136,7 @@ async def get_satellite_data(
     timestep = parser.get_timestep()
     
     if data is None:
+        logger.debug("Sattelite file is empty")
         return JSONResponse(content='Empty satellite')
     
     tsn = data[:, 0]
@@ -155,5 +160,6 @@ async def get_satellite_data(
             
 if __name__ == "__main__":
     import uvicorn
+    logger.info("Starting app")
     uvicorn.run('main:app', host="127.0.0.1", port=8000, reload=True)
     
