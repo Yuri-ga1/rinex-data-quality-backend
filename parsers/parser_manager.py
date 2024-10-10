@@ -22,11 +22,9 @@ class ParserManager:
         if self.parser is None:
             logger.warning("Attempted to access parser before initialization")
             raise HTTPException(status_code=400, detail="Parser not initialized")
-        logger.debug("Returning initialized parser")
         return self.parser
 
 async def get_parser_manager() -> ParserManager:
-    logger.debug("Returning global ParserManager instance")
     return parser_manager
 
 parser_manager = ParserManager()

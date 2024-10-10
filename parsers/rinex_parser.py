@@ -34,7 +34,7 @@ class RinexParser:
             self.file = await self.__unzip(self.file)
             logger.info(f"File unzipped: {self.file}")
         except Exception as e:
-            logger.warning(f"File already unzipped or error during unzipping: {e}")
+            logger.warning(f"File {self.filename} already unzipped or error during unzipping: {e}")
             self.file = await self.__newFile(self.file)
         
         logger.debug(f"Processing file: {self.file}")
@@ -47,20 +47,20 @@ class RinexParser:
                     timestep_match = re.search(r"(\d+\.\d+)\s+INTERVAL", line)
                     if timestep_match:
                         self.timestep = float(timestep_match.group(1).strip())
-                        logger.debug(f"Timestep found: {self.timestep}")
+                        logger.debug(f"Timestep found: {self.timestep} in file: {self.file}")
                 
                 if self.radar_coords is None:
                     radar_coords_match = re.findall(r"(.*)\s+APPROX POSITION XYZ", line)
                     if radar_coords_match:
                         splited = radar_coords_match[0].split()
                         self.radar_coords = (float(splited[0]), float(splited[1]), float(splited[2]))
-                        logger.debug(f"Radar coordinates found: {self.radar_coords}")
+                        logger.debug(f"Radar coordinates found: {self.radar_coords} in file: {self.file}")
                         
                 if self.radar_name is None:
                     radar_name_match = re.search(r"(.*)\s+MARKER NAME", line)
                     if radar_name_match:
                         self.radar_name = radar_name_match.group(1).strip()
-                        logger.debug(f"Radar name found: {self.radar_name}")
+                        logger.debug(f"Radar name found: {self.radar_name} in file: {self.file}")
                 
                 systems_match = re.findall(r"(.*)\s+SYS / # / OBS TYPES ", line)
                 if systems_match:
@@ -68,7 +68,7 @@ class RinexParser:
                     system = f"{splited[0]}_signals".lower()
                     system_types = splited[2:]
                     self.systems[system] = system_types
-                    logger.debug(f"System found: {system} with types {system_types}")
+                    logger.debug(f"System found: {system} with types {system_types} in file: {self.file}")
                     
                 if self.date is None:
                     date_match = re.findall(r"(.*)\s+TIME OF FIRST OBS", line)
@@ -76,36 +76,29 @@ class RinexParser:
                         splited = date_match[0].split()
                         year, month, day = int(splited[0]), int(splited[1]), int(splited[2])
                         self.date = date(year, month, day)
-                        logger.debug(f"Date found: {self.date}")
+                        logger.debug(f"Date found: {self.date} in file: {self.file}")
                     
                 
                     
     def get_filepath(self):
-        logger.debug(f"Returning file path: {self.file}")
         return self.file   
     
     def get_systems(self):
-        logger.debug(f"Returning systems: {self.systems}")
         return self.systems
     
     def get_timestep(self):
-        logger.debug(f"Returning timestep: {self.timestep}")
         return self.timestep
     
     def get_radar_name(self):
-        logger.debug(f"Returning radar name: {self.radar_name}")
         return self.radar_name
     
     def get_radar_coords(self):
-        logger.debug(f"Returning radar coordinates: {self.radar_coords}")
         return self.radar_coords      
     
     def get_date(self):
-        logger.debug(f"Returning date: {self.date}")
         return self.date
     
     def get_filename(self):
-        logger.debug(f"Returning filename: {self.filename}")
         return self.filename
 
         
@@ -133,10 +126,10 @@ class RinexParser:
                 file_names = z.namelist()
 
                 if len(file_names) == 0:
-                    logger.error("Empty archive")
+                    logger.error(f"Archive {self.filename} is empty")
                     raise ValueError("Empty archive")
                 elif len(file_names) > 1:
-                    logger.error("Multiple files in archive")
+                    logger.error(f"Multiple files in archive: {self.file}")
                     raise ValueError("Multiple files")
                 else:
                     file_path = z.extract(file_names[0], self.save_path)
@@ -144,6 +137,6 @@ class RinexParser:
 
             return file_path
         except zipfile.BadZipFile as e:
-            logger.error(f"Failed to unzip the file: {e}")
+            logger.error(f"Failed to unzip the file: {self.filename}")
             raise ValueError("Invalid ZIP file")
     
