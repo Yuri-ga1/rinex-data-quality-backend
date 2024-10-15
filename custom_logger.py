@@ -1,9 +1,13 @@
 import logging
 import sys
+from datetime import datetime
+import os
+import threading
 
 class Logger:
     __default_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     __root_logger = logging.getLogger("rinex_data_quality_logger")
+    __last_cleanup = None
     
     def __init__(
             self,
@@ -11,15 +15,22 @@ class Logger:
             file_logging_level=logging.INFO,
             console_logging: bool = False,
             console_logging_level=logging.DEBUG,
+            cleanup_interval: int = 86400,  # Интервал проверки логов в секундах (24 часа = 86400 секунд)
         ):
+        self.filename = filename
+        self.cleanup_interval = cleanup_interval
+        self.__last_cleanup = datetime.now()
+        
+        self.__start_cleanup_thread()
+        
         self.__root_logger.setLevel(min(file_logging_level, console_logging_level))
 
-        file_handler = logging.FileHandler(filename)
+        file_handler = logging.FileHandler(self.filename)
         file_handler.setLevel(file_logging_level)
         file_formatter = logging.Formatter(self.__default_format)
         file_handler.setFormatter(file_formatter)
 
-        if not self._file_handler_exists(filename):
+        if not self._file_handler_exists(self.filename):
             self.__root_logger.addHandler(file_handler)
 
         if console_logging:
@@ -35,6 +46,75 @@ class Logger:
             if isinstance(handler, logging.FileHandler) and handler.baseFilename == filename:
                 return True
         return False
+    
+    def __start_cleanup_thread(self):
+        """Запуск фонового потока для периодической проверки и очистки логов."""
+        def cleanup_logs_periodically():
+            while True:
+                current_time = datetime.now()
+                # Проверяем, прошло ли больше cleanup_interval времени с последней очистки
+                if (current_time - self.__last_cleanup).total_seconds() >= self.cleanup_interval:
+                    self.__remove_old_logs_from_file()
+                    self.__last_cleanup = current_time
+                # Ждем час перед следующей проверкой
+                threading.Event().wait(3600)
+
+        # Запускаем поток очистки
+        cleanup_thread = threading.Thread(target=cleanup_logs_periodically, daemon=True)
+        cleanup_thread.start()
+
+    # def __remove_old_logs_from_file(self, days_threshold: int = 30) -> None:
+    #     """Удаление строк логов старше определенного количества дней.
+    #     Хранит строки в памяти, после чего перезаписывает файл
+    #     """
+    #     if not os.path.exists(self.filename):
+    #         return
+
+    #     current_time = datetime.now()
+    #     logs_to_keep = []
+
+    #     with open(self.filename, "r") as log_file:
+    #         for line in log_file:
+    #             log_date = self.__extract_log_date(line)
+
+    #             if log_date and (current_time - log_date).days <= days_threshold:
+    #                 logs_to_keep.append(line)
+                    
+    #     with open(self.filename, "w") as log_file:
+    #         log_file.writelines(logs_to_keep)
+            
+    def __remove_old_logs_from_file(self, days_threshold: int = 30) -> None:
+        """Удаление строк логов старше определенного количества дней.
+        Создание копии файла и замена оригинального на копию
+        """
+        if not os.path.exists(self.filename):
+            return
+
+        temp_filename = self.filename + ".tmp"
+        current_time = datetime.now()
+
+        with open(self.filename, "r") as log_file, open(temp_filename, "w") as temp_file:
+            log_is_old = True
+
+            for line in log_file:
+                log_date = self.__extract_log_date(line)
+
+                if log_date:
+                    if (current_time - log_date).days <= days_threshold:
+                        log_is_old = False
+
+                if not log_is_old:
+                    temp_file.write(line)
+
+        os.replace(temp_filename, self.filename)
+                
+    def __extract_log_date(self, line: str) -> datetime:
+        """Извлекает дату лога из строки"""
+        try:
+            date_str = line.split(" - ")[0]
+            return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S,%f")
+        except (IndexError, ValueError):
+            return None
 
     # Методы для логгирования на разных уровнях
     def debug(self, message: str) -> None:
