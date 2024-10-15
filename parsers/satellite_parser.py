@@ -76,11 +76,11 @@ class SatelliteParser:
         return seconds
     
     def __clean_and_reorder_columns(self):
-        logger.info("Cleaning and reordering columns based on elevation")
+        logger.debug(f"Cleaning and reordering columns based on elevation in file {self.file}")
         
         # замена значений на 0 для строк с elevation < 10 начиная с 4 элемента
         mask = self.data[:, 2] <= self.elevation
-        logger.debug(f"Cleaning columns with elevation <= {self.elevation} in file {self.file}")
+        logger.info(f"Cleaning columns with elevation <= {self.elevation} in file {self.file}")
         self.data[mask, 4:] = 0
         
         # найти столбцы, где все значения = 0
@@ -106,8 +106,8 @@ class SatelliteParser:
         if len(self.data) > 4:
             self.data[1] = np.vectorize(self.__hours_to_seconds)(self.data[1])
             self.data = self.data.T
-            logger.debug("Converted time to seconds and adjusted data structure")
+            logger.debug(f"Converted time to seconds and adjusted data structure in file {self.file}")
         else:
             self.data = None
-            logger.warning("No data available after cleaning")
+            logger.warning(f"No data available after cleaning in file {self.file}")
             

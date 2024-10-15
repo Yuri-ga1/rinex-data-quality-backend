@@ -48,7 +48,7 @@ async def upload_data(
     background_tasks.add_task(download_sattelite_files, parser, task_id)
     
     systems = parser.get_systems()
-    graph_data = get_graph_data(systems)
+    graph_data = get_graph_data(systems, task_id)
     content = {
         'task_id': task_id,
         'graph_data': graph_data 
@@ -127,7 +127,7 @@ async def get_satellite_data(
     radar = parser.get_radar_name().lower()
     filename = f'{radar}_{satellite}_{yday}_{year%100}.dat'
     filepath = f'{FILE_BASE_PATH}satellite\\{year}\\{yday}\\{filename}'
-    logger.debug(f"Getting data for satellite: {satellite}")
+    logger.debug(f"Getting data for satellite: {satellite} from file: {filename}")
 
     _satellite = await SatelliteParser.create(filepath)
     

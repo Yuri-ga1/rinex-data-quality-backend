@@ -272,8 +272,8 @@ def send_file(path, cookies, url):
             logger.error(f"Failed to send file. Status code: {response.status_code}")
             response.raise_for_status()
     
-def get_graph_data(signals: dict):
-    logger.info("Preparing graph data from signals")
+def get_graph_data(signals: dict, task_id: str):
+    logger.info(f"Preparing graph data from signals for task: {task_id}")
     
     graph_data = []
     for signal in signals:
@@ -287,7 +287,7 @@ def get_graph_data(signals: dict):
             })
         graph_data.append(s)
         
-    logger.debug(f"Graph data prepared: {graph_data}")
+    logger.debug(f"Graph data successfully prepared for task: {task_id}")
     return graph_data
 
 def download_sattelite_files(parser: RinexParser, task_id: str):
