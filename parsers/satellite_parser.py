@@ -66,7 +66,9 @@ class SatelliteParser:
         return self.zero_col_headers
     
     def get_signals(self):
-        return self.headers[4:]
+        if self.headers:
+            return self.headers[4:]
+        return None
     
     def get_satellite(self):
         return self.satellite
