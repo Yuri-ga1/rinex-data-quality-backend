@@ -16,13 +16,7 @@ ENV PATH="/root/.local/bin:$PATH"
 WORKDIR /app
 
 # Копирование файлов проекта в контейнер
-COPY ./parsers ./parsers
-COPY config.py .
-COPY custom_logger.py .
-COPY main.py .
-COPY functions.py .
-COPY poetry.lock .
-COPY pyproject.toml .
+COPY ./app .
 
 # Установка зависимостей из pyproject.toml
 RUN poetry install --no-root

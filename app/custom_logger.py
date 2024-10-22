@@ -30,8 +30,7 @@ class Logger:
         file_formatter = logging.Formatter(self.__default_format)
         file_handler.setFormatter(file_formatter)
 
-        if not self._file_handler_exists(self.filename):
-            self.__root_logger.addHandler(file_handler)
+        self.__root_logger.addHandler(file_handler)
 
         if console_logging:
             console_handler = logging.StreamHandler(sys.stdout)
