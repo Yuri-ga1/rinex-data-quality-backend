@@ -14,7 +14,7 @@ install_docker_compose() {
 }
 
 # Проверка наличия Docker Compose
-if ! command -v docker-compose &> /dev/null; then
+if [[ $(which docker-compose) && $(docker-compose --version) ]]; then
     echo "Docker Compose not found."
     install_docker_compose
 else
