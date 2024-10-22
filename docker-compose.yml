@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  redis:
+    image: redis-image  # Используем ранее созданный образ Redis
+    ports:
+      - "6379:6379"
+
+  app:
+    build: .  # Собираем приложение из текущей директории
+    depends_on:
+      - redis  # Приложение зависит от Redis
+    ports:
+      - "8000:8000"

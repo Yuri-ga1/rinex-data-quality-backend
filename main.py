@@ -161,5 +161,5 @@ async def get_satellite_data(
 if __name__ == "__main__":
     import uvicorn
     logger.info("Starting app")
-    uvicorn.run('main:app', host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=True)
     

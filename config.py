@@ -10,13 +10,13 @@ from custom_logger import Logger
 import logging
 
 logger = Logger(
-    filename='rinex_data_quality_logger.log',
+    filename='/tmp/rinex_data_quality_logger.log',
     console_logging=True,
     file_logging_level= logging.DEBUG
 )
 
 import redis
 try:
-    redis_client = redis.Redis(host='localhost', port=6379, db=0)
+    redis_client = redis.Redis(host='redis', port=6379, db=0)
 except:
     logger.critical("Redis client is not working")
