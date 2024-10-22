@@ -12,3 +12,5 @@ services:
       - redis  # Приложение зависит от Redis
     ports:
       - "8000:8000"
+    volumes:
+      - /tmp:/app/tmp
