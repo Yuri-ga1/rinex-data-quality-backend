@@ -6,6 +6,7 @@ from config import *
 import uuid
 import json
 import asyncio
+import os
 
 from parsers.satellite_parser import SatelliteParser
 from parsers.parser_manager import ParserManager, get_parser_manager
@@ -91,7 +92,7 @@ async def find_holes_in_data(
     
     timestep = parser.get_timestep()
     
-    extract_to_folder = f"{FILE_BASE_PATH}satellite\\{year}\\{yday}"
+    extract_to_folder =os.path.join(FILE_BASE_PATH, "satellite", f"{year}", yday)
     result=[]
     files = unzip_zip(save_path, extract_to_folder=extract_to_folder)
     
@@ -126,7 +127,7 @@ async def get_satellite_data(
     
     radar = parser.get_radar_name().lower()
     filename = f'{radar}_{satellite}_{yday}_{year%100}.dat'
-    filepath = f'{FILE_BASE_PATH}satellite\\{year}\\{yday}\\{filename}'
+    filepath = os.path.join(FILE_BASE_PATH, "satellite", f"{year}", yday, filename)
     logger.debug(f"Getting data for satellite: {satellite} from file: {filename}")
 
     _satellite = await SatelliteParser.create(filepath)

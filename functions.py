@@ -18,7 +18,7 @@ def upload_nav_file(year: int, yday: str, nav_filename: str, cookies: dict):
     logger.info(f"Uploading navigation file. Params: doy = {yday}, year={year}, filename={nav_filename}")
     
     href = f"https://simurg.space/files2/{year}/{yday}/nav/{nav_filename}"
-    download_folder = f"{FILE_BASE_PATH}downloaded_files\\{year}\\{yday}"
+    download_folder = os.path.join(FILE_BASE_PATH, 'downloaded_files', f"{year}", yday)
     os.makedirs(download_folder, exist_ok=True)
     save_path = os.path.join(download_folder, nav_filename)
     
