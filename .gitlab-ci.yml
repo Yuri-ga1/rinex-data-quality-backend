@@ -1,0 +1,14 @@
+stages:
+  - deploy
+
+# Запуск приложения
+deploy:
+  stage: deploy
+  script:
+    - docker stop rinex-qa-backend || true
+    - docker rm rinex-qa-backend || true
+    - docker-compose stop
+    - docker-compose up -d --build
+
+  tags:
+    - rinex-qa
