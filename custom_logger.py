@@ -63,25 +63,6 @@ class Logger:
         cleanup_thread = threading.Thread(target=cleanup_logs_periodically, daemon=True)
         cleanup_thread.start()
 
-    # def __remove_old_logs_from_file(self, days_threshold: int = 30) -> None:
-    #     """Удаление строк логов старше определенного количества дней.
-    #     Хранит строки в памяти, после чего перезаписывает файл
-    #     """
-    #     if not os.path.exists(self.filename):
-    #         return
-
-    #     current_time = datetime.now()
-    #     logs_to_keep = []
-
-    #     with open(self.filename, "r") as log_file:
-    #         for line in log_file:
-    #             log_date = self.__extract_log_date(line)
-
-    #             if log_date and (current_time - log_date).days <= days_threshold:
-    #                 logs_to_keep.append(line)
-                    
-    #     with open(self.filename, "w") as log_file:
-    #         log_file.writelines(logs_to_keep)
             
     def __remove_old_logs_from_file(self, days_threshold: int = 30) -> None:
         """Удаление строк логов старше определенного количества дней.
